@@ -2,6 +2,11 @@ pipeline {
   agent none
   stages {
     stage('build') {
+      when { 
+          allOf {
+              expression { env.BRANCH_NAME == 'master'  }
+          }
+      }
       agent {
         docker {
           image 'maven:3.6.3-jdk-11-slim'
@@ -15,6 +20,11 @@ pipeline {
     }
 
     stage('test') {
+      when { 
+          allOf {
+              expression { env.BRANCH_NAME == 'master'  }
+          }
+      }
       agent {
         docker {
           image 'maven:3.6.3-jdk-11-slim'
@@ -28,6 +38,11 @@ pipeline {
     }
 
     stage('package') {
+      when { 
+          allOf {
+              expression { env.BRANCH_NAME == 'master'  }
+          }
+      }
       agent {
         docker {
           image 'maven:3.6.3-jdk-11-slim'
