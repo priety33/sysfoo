@@ -2,11 +2,6 @@ pipeline {
   agent none
   stages {
     stage('build') {
-      when { 
-          allOf {
-              expression { env.BRANCH_NAME == 'master'  }
-          }
-      }
       agent {
         docker {
           image 'maven:3.6.3-jdk-11-slim'
@@ -20,11 +15,6 @@ pipeline {
     }
 
     stage('test') {
-      when { 
-          allOf {
-              expression { env.BRANCH_NAME == 'master'  }
-          }
-      }
       agent {
         docker {
           image 'maven:3.6.3-jdk-11-slim'
@@ -36,38 +26,38 @@ pipeline {
         sh 'mvn clean test'
       }
     }
+    
+    stage('parallel package') {
+      when { branch 'master' }
+      parallel {
+         stage('package') {
+          agent {
+            docker {
+              image 'maven:3.6.3-jdk-11-slim'
+            }
 
-    stage('package') {
-      when { 
-          allOf {
-              expression { env.BRANCH_NAME == 'master'  }
           }
-      }
-      agent {
-        docker {
-          image 'maven:3.6.3-jdk-11-slim'
-        }
-
-      }
-      steps {
-        echo 'package maven app'
-        sh 'mvn package -DskipTests'
-        archiveArtifacts 'target/*.war'
-      }
-    }
-
-    stage('Docker BnP') {
-      agent any
-      steps {
-        script {
-          docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
-            def dockerImage = docker.build("priety33/sysfoo:v${env.BUILD_ID}", "./")
-            dockerImage.push()
-            dockerImage.push("latest")
-            dockerImage.push("dev")
+          steps {
+            echo 'package maven app'
+            sh 'mvn package -DskipTests'
+            archiveArtifacts 'target/*.war'
           }
         }
 
+        stage('Docker BnP') {
+          agent any
+          steps {
+            script {
+              docker.withRegistry('https://index.docker.io/v1/', 'dockerlogin') {
+                def dockerImage = docker.build("priety33/sysfoo:v${env.BUILD_ID}", "./")
+                dockerImage.push()
+                dockerImage.push("latest")
+                dockerImage.push("dev")
+              }
+            }
+
+          }
+        }
       }
     }
 
